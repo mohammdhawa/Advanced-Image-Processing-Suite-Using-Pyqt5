@@ -1122,35 +1122,34 @@ class UI(QMainWindow):
             print(len(self.image_stack))
 
     def adaptive_threshold(self):
-        if len(self.image_stack):
+        if self.image_stack:
             image = self.image_stack[-1]
             dialog = AdaptiveThresholdDialog(self)
             if dialog.exec_() == QDialog.Accepted:
                 block_size = dialog.block_size
                 c = dialog.c
 
-                if block_size is not None and c is not None:
-                    # Convert the image to grayscale if it's not already in grayscale
+                if block_size is not None and c is not None and block_size % 2 == 1 and block_size > 1:
                     if len(image.shape) > 2:
                         gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
                     else:
                         gray_image = image
 
-                    # Apply adaptive thresholding
                     adaptive_thresh = cv2.adaptiveThreshold(gray_image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                             cv2.THRESH_BINARY, block_size, c)
 
-                    # Display the thresholded image
                     height, width = adaptive_thresh.shape
                     bytes_per_line = width
                     q_img = QImage(adaptive_thresh.data, width, height, bytes_per_line, QImage.Format_Grayscale8)
                     scaled_pixmap = q_img.scaled(self.label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
                     self.label.setPixmap(QPixmap.fromImage(scaled_pixmap))
 
-                    # Update the image stack
                     self.image_stack.append(adaptive_thresh)
-                    print(len(self.image_stack))
-
+                    print("Stack size after adding:", len(self.image_stack))
+                else:
+                    print("Invalid block_size or c value:", block_size, c)
+        else:
+            print("No images in stack to process.")
 
     def start_region_growing(self):
         self.region_growing_active = True
